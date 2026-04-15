@@ -1,10 +1,2 @@
-import AppLayout from "@/components/AppLayout";
-import Dashboard from "./Dashboard";
-
-const Index = () => (
-  <AppLayout>
-    <Dashboard />
-  </AppLayout>
-);
-
+const Index = () => null;
 export default Index;
