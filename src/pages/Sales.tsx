@@ -33,7 +33,8 @@ const Sales = () => {
         />
       </div>
 
-      <div className="glass-card overflow-hidden rounded-xl">
+      {/* Desktop table */}
+      <div className="hidden md:block glass-card overflow-hidden rounded-xl">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border">
@@ -69,6 +70,30 @@ const Sales = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((sale) => (
+          <div key={sale.id} className="glass-card rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">{sale.id}</span>
+              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium capitalize ${statusStyles[sale.status]}`}>
+                {sale.status}
+              </span>
+            </div>
+            <p className="text-sm font-semibold text-foreground">{sale.customer}</p>
+            <p className="text-xs text-muted-foreground">{sale.items.join(", ")}</p>
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <p className="font-heading text-base font-bold gold-text">R$ {sale.total.toFixed(2)}</p>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {new Date(sale.date).toLocaleDateString("pt-BR")}
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">{sale.paymentMethod}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

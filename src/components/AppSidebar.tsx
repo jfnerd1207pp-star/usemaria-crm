@@ -19,12 +19,21 @@ const navItems = [
   { icon: Settings, label: "Configurações", path: "/configuracoes" },
 ];
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+  onNavigate?: () => void;
+}
+
+const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const handleNav = (path: string) => {
+    navigate(path);
+    onNavigate?.();
+  };
+
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-sidebar">
+    <aside className="flex h-screen w-64 flex-col md:fixed md:left-0 md:top-0 md:z-40 md:border-r md:border-border bg-sidebar">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg gold-gradient">
@@ -43,7 +52,7 @@ const AppSidebar = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNav(item.path)}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
                   ? "bg-primary/10 text-primary"
