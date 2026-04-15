@@ -3,7 +3,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import MetricCard from "@/components/MetricCard";
 import { salesChartData, categoryData, sales, customers } from "@/data/mockData";
 
-const COLORS = ["hsl(43, 60%, 54%)", "hsl(43, 70%, 72%)", "hsl(43, 50%, 38%)", "hsl(0, 0%, 40%)", "hsl(0, 0%, 25%)"];
+const COLORS = ["hsl(43, 60%, 54%)", "hsl(43, 70%, 72%)", "hsl(43, 50%, 38%)", "hsl(0, 0%, 40%)"];
 
 const Dashboard = () => {
   const recentSales = sales.slice(0, 5);
@@ -14,15 +14,15 @@ const Dashboard = () => {
       {/* Header */}
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral da sua loja de roupas</p>
+        <p className="text-sm text-muted-foreground">Visão geral da Usemari</p>
       </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Faturamento" value="R$ 22.100" change="+12% vs mês anterior" changeType="positive" icon={DollarSign} />
-        <MetricCard title="Clientes" value="248" change="+18 novos este mês" changeType="positive" icon={Users} />
-        <MetricCard title="Produtos" value="86" change="4 com estoque baixo" changeType="neutral" icon={ShoppingBag} />
-        <MetricCard title="Ticket Médio" value="R$ 245" change="+8% vs mês anterior" changeType="positive" icon={TrendingUp} />
+        <MetricCard title="Faturamento" value="R$ 31.500" change="+15% vs mês anterior" changeType="positive" icon={DollarSign} />
+        <MetricCard title="Clientes" value="186" change="+12 novos este mês" changeType="positive" icon={Users} />
+        <MetricCard title="Produtos" value="54" change="2 com estoque baixo" changeType="neutral" icon={ShoppingBag} />
+        <MetricCard title="Ticket Médio" value="R$ 412" change="+10% vs mês anterior" changeType="positive" icon={TrendingUp} />
       </div>
 
       {/* Charts */}

@@ -31,8 +31,8 @@ const AppSidebar = () => {
           <ShoppingBag className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="font-heading text-sm font-semibold text-foreground">Fashion CRM</h1>
-          <p className="text-[10px] text-muted-foreground">Gestão de Loja</p>
+          <h1 className="font-heading text-sm font-semibold text-foreground">Usemari</h1>
+          <p className="text-[10px] text-muted-foreground">Gestão da Loja</p>
         </div>
       </div>
 
