@@ -1,6 +1,12 @@
-import { Search, Calendar } from "lucide-react";
-import { useState } from "react";
-import { sales } from "@/data/mockData";
+import { useState, useMemo } from "react";
+import { Search, Calendar, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { sales, products, customers } from "@/data/mockData";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const statusStyles = {
   "concluída": "bg-emerald-500/10 text-emerald-400",
@@ -8,18 +14,112 @@ const statusStyles = {
   "cancelada": "bg-red-500/10 text-red-400",
 };
 
+const paymentMethods = [
+  "PIX",
+  "Cartão Crédito",
+  "Cartão Débito",
+  "Dinheiro",
+  "Boleto",
+];
+
+interface CartItem {
+  productId: string;
+  qty: number;
+}
+
 const Sales = () => {
   const [search, setSearch] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customerId, setCustomerId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const { toast } = useToast();
 
   const filtered = sales.filter((s) =>
     s.customer.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase())
   );
 
+  const availableProducts = products.filter((p) => p.stock > 0);
+
+  const subtotal = useMemo(
+    () =>
+      cart.reduce((acc, item) => {
+        const product = products.find((p) => p.id === item.productId);
+        return acc + (product ? product.price * item.qty : 0);
+      }, 0),
+    [cart]
+  );
+
+  const discountValue = parseFloat(discount) || 0;
+  const total = Math.max(0, subtotal - discountValue);
+
+  const addProduct = () => {
+    if (!selectedProductId) return;
+    const exists = cart.find((c) => c.productId === selectedProductId);
+    if (exists) {
+      setCart(cart.map((c) =>
+        c.productId === selectedProductId ? { ...c, qty: c.qty + 1 } : c
+      ));
+    } else {
+      setCart([...cart, { productId: selectedProductId, qty: 1 }]);
+    }
+    setSelectedProductId("");
+  };
+
+  const updateQty = (productId: string, qty: number) => {
+    if (qty <= 0) {
+      setCart(cart.filter((c) => c.productId !== productId));
+      return;
+    }
+    setCart(cart.map((c) => (c.productId === productId ? { ...c, qty } : c)));
+  };
+
+  const removeItem = (productId: string) => {
+    setCart(cart.filter((c) => c.productId !== productId));
+  };
+
+  const resetForm = () => {
+    setCustomerId("");
+    setPaymentMethod("");
+    setDiscount("");
+    setCart([]);
+    setSelectedProductId("");
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerId || !paymentMethod || cart.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione cliente, forma de pagamento e ao menos um produto",
+        variant: "destructive",
+      });
+      return;
+    }
+    const customer = customers.find((c) => c.id === customerId);
+    toast({
+      title: "Venda registrada!",
+      description: `${customer?.name} - R$ ${total.toFixed(2)} via ${paymentMethod}`,
+    });
+    resetForm();
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Vendas</h1>
-        <p className="text-sm text-muted-foreground">{sales.length} vendas registradas</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Vendas</h1>
+          <p className="text-sm text-muted-foreground">{sales.length} vendas registradas</p>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 rounded-lg gold-gradient px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" /> Nova Venda
+        </button>
       </div>
 
       <div className="relative max-w-md">
@@ -95,6 +195,161 @@ const Sales = () => {
           </div>
         ))}
       </div>
+
+      {/* Modal Nova Venda */}
+      <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) resetForm(); }}>
+        <DialogContent className="glass-card max-w-2xl max-h-[90vh] overflow-y-auto border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-lg flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" /> Nova Venda
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Cliente */}
+            <div className="space-y-2">
+              <Label>Cliente *</Label>
+              <Select value={customerId} onValueChange={setCustomerId}>
+                <SelectTrigger className="bg-secondary/50">
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Adicionar Produto */}
+            <div className="space-y-2">
+              <Label>Adicionar Produto</Label>
+              <div className="flex gap-2">
+                <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                  <SelectTrigger className="bg-secondary/50 flex-1">
+                    <SelectValue placeholder="Selecione um produto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableProducts.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.image} {p.name} — R$ {p.price.toFixed(2)} ({p.stock} em estoque)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" onClick={addProduct} disabled={!selectedProductId} className="gold-gradient font-semibold">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Carrinho */}
+            {cart.length > 0 && (
+              <div className="space-y-2">
+                <Label>Itens da Venda</Label>
+                <div className="rounded-lg border border-border bg-secondary/20 divide-y divide-border">
+                  {cart.map((item) => {
+                    const product = products.find((p) => p.id === item.productId);
+                    if (!product) return null;
+                    const lineTotal = product.price * item.qty;
+                    return (
+                      <div key={item.productId} className="flex items-center gap-3 p-3">
+                        <span className="text-2xl">{product.image}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">R$ {product.price.toFixed(2)} un.</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => updateQty(item.productId, item.qty - 1)}
+                            className="h-7 w-7 rounded-md border border-border bg-card text-sm hover:border-primary/40"
+                          >
+                            −
+                          </button>
+                          <span className="w-8 text-center text-sm font-medium">{item.qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateQty(item.productId, Math.min(product.stock, item.qty + 1))}
+                            className="h-7 w-7 rounded-md border border-border bg-card text-sm hover:border-primary/40"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="w-24 text-right text-sm font-semibold gold-text">R$ {lineTotal.toFixed(2)}</p>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.productId)}
+                          className="text-muted-foreground transition-colors hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Pagamento e Desconto */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Forma de Pagamento *</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="bg-secondary/50">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discount">Desconto (R$)</Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  className="bg-secondary/50"
+                />
+              </div>
+            </div>
+
+            {/* Totais */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium text-foreground">R$ {subtotal.toFixed(2)}</span>
+              </div>
+              {discountValue > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Desconto</span>
+                  <span className="font-medium text-red-400">− R$ {discountValue.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-primary/20">
+                <span className="font-heading text-sm font-semibold text-foreground">Total</span>
+                <span className="font-heading text-xl font-bold gold-text">R$ {total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsModalOpen(false); resetForm(); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="flex-1 gold-gradient font-semibold">
+                Registrar Venda
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
