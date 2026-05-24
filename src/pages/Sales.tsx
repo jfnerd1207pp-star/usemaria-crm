@@ -91,6 +91,33 @@ const Sales = () => {
     setDiscount("");
     setCart([]);
     setSelectedProductId("");
+    setEditingId(null);
+  };
+
+  const openEdit = (sale: Sale) => {
+    const customer = customers.find((c) => c.name === sale.customer);
+    const cartItems: CartItem[] = sale.items
+      .map((name) => {
+        const p = products.find((p) => p.name === name);
+        return p ? { productId: p.id, qty: 1 } : null;
+      })
+      .filter((x): x is CartItem => x !== null);
+    setEditingId(sale.id);
+    setCustomerId(customer?.id || "");
+    setPaymentMethod(sale.paymentMethod);
+    setDiscount("");
+    setCart(cartItems);
+    setSelectedProductId("");
+    setIsModalOpen(true);
+  };
+
+  const confirmCancel = () => {
+    if (!cancelTargetId) return;
+    setSales((prev) =>
+      prev.map((s) => (s.id === cancelTargetId ? { ...s, status: "cancelada" } : s))
+    );
+    toast({ title: "Venda cancelada", description: `${cancelTargetId} marcada como cancelada` });
+    setCancelTargetId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -104,25 +131,56 @@ const Sales = () => {
       return;
     }
     const customer = customers.find((c) => c.id === customerId);
-    const saleId = `V${String(sales.length + 1).padStart(3, "0")}`;
-    const items = cart.map((c) => {
+    const itemsDetailed = cart.map((c) => {
       const p = products.find((p) => p.id === c.productId)!;
       return { name: p.name, qty: c.qty, price: p.price };
     });
-    generateReceiptPDF({
-      saleId,
-      customer: customer?.name || "",
-      items,
-      subtotal,
-      discount: discountValue,
-      total,
-      paymentMethod,
-      date: new Date(),
-    });
-    toast({
-      title: "Venda registrada!",
-      description: `${customer?.name} - R$ ${total.toFixed(2)} • Comprovante gerado`,
-    });
+
+    if (editingId) {
+      setSales((prev) =>
+        prev.map((s) =>
+          s.id === editingId
+            ? {
+                ...s,
+                customer: customer?.name || s.customer,
+                items: itemsDetailed.map((i) => i.name),
+                total,
+                paymentMethod,
+              }
+            : s
+        )
+      );
+      toast({
+        title: "Venda atualizada!",
+        description: `${editingId} • R$ ${total.toFixed(2)}`,
+      });
+    } else {
+      const saleId = `V${String(sales.length + 1).padStart(3, "0")}`;
+      const newSale: Sale = {
+        id: saleId,
+        customer: customer?.name || "",
+        items: itemsDetailed.map((i) => i.name),
+        total,
+        date: new Date().toISOString().slice(0, 10),
+        status: "concluída",
+        paymentMethod,
+      };
+      setSales((prev) => [newSale, ...prev]);
+      generateReceiptPDF({
+        saleId,
+        customer: customer?.name || "",
+        items: itemsDetailed,
+        subtotal,
+        discount: discountValue,
+        total,
+        paymentMethod,
+        date: new Date(),
+      });
+      toast({
+        title: "Venda registrada!",
+        description: `${customer?.name} - R$ ${total.toFixed(2)} • Comprovante gerado`,
+      });
+    }
     resetForm();
     setIsModalOpen(false);
   };
