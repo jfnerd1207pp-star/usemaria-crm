@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
-import { Search, Calendar, Plus, Trash2, ShoppingCart } from "lucide-react";
-import { sales, products, customers } from "@/data/mockData";
+import { Search, Calendar, Plus, Trash2, ShoppingCart, Pencil, Ban } from "lucide-react";
+import { sales as initialSales, products, customers, type Sale } from "@/data/mockData";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,11 @@ interface CartItem {
 }
 
 const Sales = () => {
+  const [sales, setSales] = useState<Sale[]>(initialSales);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [discount, setDiscount] = useState("");
@@ -87,6 +91,33 @@ const Sales = () => {
     setDiscount("");
     setCart([]);
     setSelectedProductId("");
+    setEditingId(null);
+  };
+
+  const openEdit = (sale: Sale) => {
+    const customer = customers.find((c) => c.name === sale.customer);
+    const cartItems: CartItem[] = sale.items
+      .map((name) => {
+        const p = products.find((p) => p.name === name);
+        return p ? { productId: p.id, qty: 1 } : null;
+      })
+      .filter((x): x is CartItem => x !== null);
+    setEditingId(sale.id);
+    setCustomerId(customer?.id || "");
+    setPaymentMethod(sale.paymentMethod);
+    setDiscount("");
+    setCart(cartItems);
+    setSelectedProductId("");
+    setIsModalOpen(true);
+  };
+
+  const confirmCancel = () => {
+    if (!cancelTargetId) return;
+    setSales((prev) =>
+      prev.map((s) => (s.id === cancelTargetId ? { ...s, status: "cancelada" } : s))
+    );
+    toast({ title: "Venda cancelada", description: `${cancelTargetId} marcada como cancelada` });
+    setCancelTargetId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,25 +131,56 @@ const Sales = () => {
       return;
     }
     const customer = customers.find((c) => c.id === customerId);
-    const saleId = `V${String(sales.length + 1).padStart(3, "0")}`;
-    const items = cart.map((c) => {
+    const itemsDetailed = cart.map((c) => {
       const p = products.find((p) => p.id === c.productId)!;
       return { name: p.name, qty: c.qty, price: p.price };
     });
-    generateReceiptPDF({
-      saleId,
-      customer: customer?.name || "",
-      items,
-      subtotal,
-      discount: discountValue,
-      total,
-      paymentMethod,
-      date: new Date(),
-    });
-    toast({
-      title: "Venda registrada!",
-      description: `${customer?.name} - R$ ${total.toFixed(2)} • Comprovante gerado`,
-    });
+
+    if (editingId) {
+      setSales((prev) =>
+        prev.map((s) =>
+          s.id === editingId
+            ? {
+                ...s,
+                customer: customer?.name || s.customer,
+                items: itemsDetailed.map((i) => i.name),
+                total,
+                paymentMethod,
+              }
+            : s
+        )
+      );
+      toast({
+        title: "Venda atualizada!",
+        description: `${editingId} • R$ ${total.toFixed(2)}`,
+      });
+    } else {
+      const saleId = `V${String(sales.length + 1).padStart(3, "0")}`;
+      const newSale: Sale = {
+        id: saleId,
+        customer: customer?.name || "",
+        items: itemsDetailed.map((i) => i.name),
+        total,
+        date: new Date().toISOString().slice(0, 10),
+        status: "concluída",
+        paymentMethod,
+      };
+      setSales((prev) => [newSale, ...prev]);
+      generateReceiptPDF({
+        saleId,
+        customer: customer?.name || "",
+        items: itemsDetailed,
+        subtotal,
+        discount: discountValue,
+        total,
+        paymentMethod,
+        date: new Date(),
+      });
+      toast({
+        title: "Venda registrada!",
+        description: `${customer?.name} - R$ ${total.toFixed(2)} • Comprovante gerado`,
+      });
+    }
     resetForm();
     setIsModalOpen(false);
   };
@@ -161,6 +223,7 @@ const Sales = () => {
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pagamento</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -181,6 +244,28 @@ const Sales = () => {
                   <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium capitalize ${statusStyles[sale.status]}`}>
                     {sale.status}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(sale)}
+                      disabled={sale.status === "cancelada"}
+                      title="Editar"
+                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-primary disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCancelTargetId(sale.id)}
+                      disabled={sale.status === "cancelada"}
+                      title="Cancelar"
+                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    >
+                      <Ban className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -208,6 +293,28 @@ const Sales = () => {
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">{sale.paymentMethod}</p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => openEdit(sale)}
+                disabled={sale.status === "cancelada"}
+                className="h-8 gap-1.5"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setCancelTargetId(sale.id)}
+                disabled={sale.status === "cancelada"}
+                className="h-8 gap-1.5 hover:text-destructive hover:border-destructive/40"
+              >
+                <Ban className="h-3.5 w-3.5" /> Cancelar
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -217,7 +324,7 @@ const Sales = () => {
         <DialogContent className="glass-card max-w-2xl max-h-[90vh] overflow-y-auto border-border">
           <DialogHeader>
             <DialogTitle className="font-heading text-lg flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" /> Nova Venda
+              <ShoppingCart className="h-5 w-5 text-primary" /> {editingId ? `Editar Venda ${editingId}` : "Nova Venda"}
             </DialogTitle>
           </DialogHeader>
 
@@ -360,12 +467,30 @@ const Sales = () => {
                 Cancelar
               </Button>
               <Button type="submit" className="flex-1 gold-gradient font-semibold">
-                Registrar Venda
+                {editingId ? "Salvar Alterações" : "Registrar Venda"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de cancelamento */}
+      <AlertDialog open={cancelTargetId !== null} onOpenChange={(open) => !open && setCancelTargetId(null)}>
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-heading">Cancelar venda {cancelTargetId}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação marcará a venda como cancelada. Você poderá visualizá-la, mas não editá-la novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
