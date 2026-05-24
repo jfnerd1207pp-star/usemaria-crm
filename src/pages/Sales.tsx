@@ -473,6 +473,24 @@ const Sales = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação de cancelamento */}
+      <AlertDialog open={cancelTargetId !== null} onOpenChange={(open) => !open && setCancelTargetId(null)}>
+        <AlertDialogContent className="glass-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-heading">Cancelar venda {cancelTargetId}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação marcará a venda como cancelada. Você poderá visualizá-la, mas não editá-la novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
