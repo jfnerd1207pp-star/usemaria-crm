@@ -467,7 +467,7 @@ const Sales = () => {
                 Cancelar
               </Button>
               <Button type="submit" className="flex-1 gold-gradient font-semibold">
-                Registrar Venda
+                {editingId ? "Salvar Alterações" : "Registrar Venda"}
               </Button>
             </div>
           </form>
