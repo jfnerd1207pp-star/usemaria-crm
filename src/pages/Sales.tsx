@@ -223,6 +223,7 @@ const Sales = () => {
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pagamento</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -243,6 +244,28 @@ const Sales = () => {
                   <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium capitalize ${statusStyles[sale.status]}`}>
                     {sale.status}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(sale)}
+                      disabled={sale.status === "cancelada"}
+                      title="Editar"
+                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-primary disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCancelTargetId(sale.id)}
+                      disabled={sale.status === "cancelada"}
+                      title="Cancelar"
+                      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    >
+                      <Ban className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
