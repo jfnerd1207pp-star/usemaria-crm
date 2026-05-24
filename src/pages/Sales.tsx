@@ -324,7 +324,7 @@ const Sales = () => {
         <DialogContent className="glass-card max-w-2xl max-h-[90vh] overflow-y-auto border-border">
           <DialogHeader>
             <DialogTitle className="font-heading text-lg flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" /> Nova Venda
+              <ShoppingCart className="h-5 w-5 text-primary" /> {editingId ? `Editar Venda ${editingId}` : "Nova Venda"}
             </DialogTitle>
           </DialogHeader>
 
