@@ -293,6 +293,28 @@ const Sales = () => {
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">{sale.paymentMethod}</p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => openEdit(sale)}
+                disabled={sale.status === "cancelada"}
+                className="h-8 gap-1.5"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setCancelTargetId(sale.id)}
+                disabled={sale.status === "cancelada"}
+                className="h-8 gap-1.5 hover:text-destructive hover:border-destructive/40"
+              >
+                <Ban className="h-3.5 w-3.5" /> Cancelar
+              </Button>
+            </div>
           </div>
         ))}
       </div>
