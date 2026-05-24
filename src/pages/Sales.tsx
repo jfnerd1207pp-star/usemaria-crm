@@ -30,8 +30,11 @@ interface CartItem {
 }
 
 const Sales = () => {
+  const [sales, setSales] = useState<Sale[]>(initialSales);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [discount, setDiscount] = useState("");
