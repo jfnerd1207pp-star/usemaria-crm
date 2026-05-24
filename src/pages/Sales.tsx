@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
-import { Search, Calendar, Plus, Trash2, ShoppingCart } from "lucide-react";
-import { sales, products, customers } from "@/data/mockData";
+import { Search, Calendar, Plus, Trash2, ShoppingCart, Pencil, Ban } from "lucide-react";
+import { sales as initialSales, products, customers, type Sale } from "@/data/mockData";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
