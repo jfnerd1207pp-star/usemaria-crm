@@ -100,9 +100,24 @@ const Sales = () => {
       return;
     }
     const customer = customers.find((c) => c.id === customerId);
+    const saleId = `V${String(sales.length + 1).padStart(3, "0")}`;
+    const items = cart.map((c) => {
+      const p = products.find((p) => p.id === c.productId)!;
+      return { name: p.name, qty: c.qty, price: p.price };
+    });
+    generateReceiptPDF({
+      saleId,
+      customer: customer?.name || "",
+      items,
+      subtotal,
+      discount: discountValue,
+      total,
+      paymentMethod,
+      date: new Date(),
+    });
     toast({
       title: "Venda registrada!",
-      description: `${customer?.name} - R$ ${total.toFixed(2)} via ${paymentMethod}`,
+      description: `${customer?.name} - R$ ${total.toFixed(2)} • Comprovante gerado`,
     });
     resetForm();
     setIsModalOpen(false);
